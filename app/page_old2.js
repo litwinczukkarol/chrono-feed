@@ -26,21 +26,7 @@ function FeedContent() {
       setLoading(true);
       setError(null);
       try {
-        // CZYSZCZENIE PARAMETRU: Przekształcamy '["94997","138502"]' na '94997,138502'
-        let cleanShows = rawShows;
-        if (rawShows) {
-          try {
-            const parsed = JSON.parse(rawShows);
-            if (Array.isArray(parsed)) {
-              cleanShows = parsed.join(',');
-            }
-          } catch (e) {
-            cleanShows = rawShows.replace(/[\[\]"'\s]/g, '');
-          }
-        }
-
-        // Wysyłamy do backendu już czysty ciąg po przecinkach
-        const query = cleanShows ? `?shows=${encodeURIComponent(cleanShows)}` : '';
+        const query = rawShows ? `?shows=${encodeURIComponent(rawShows)}` : '';
         const res = await fetch(`/api/feed${query}`);
         const data = await res.json();
 
