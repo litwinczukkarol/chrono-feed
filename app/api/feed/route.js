@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Wyłączamy statyczny cache Next.js dla tego endpointu API
+export const dynamic = 'force-dynamic';
+
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -87,14 +90,26 @@ export async function GET(request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const idsParam = searchParams.get('ids');
+  const rawParam = searchParams.get('shows') || searchParams.get('ids');
 
   let showIds = [];
   let isFallback = false;
   let fallbackReason = null;
 
-  if (idsParam && idsParam.trim().length > 0) {
-    showIds = idsParam.split(',').map((id) => parseInt(id.trim())).filter(Boolean);
+  if (rawParam && rawParam.trim().length > 0) {
+    try {
+      const parsed = JSON.parse(rawParam);
+      if (Array.isArray(parsed)) {
+        showIds = parsed
+          .map((id) => parseInt(String(id).replace(/\D/g, ''), 10))
+          .filter((id) => !isNaN(id) && id > 0);
+      }
+    } catch (e) {
+      showIds = rawParam
+        .split(',')
+        .map((id) => parseInt(id.replace(/[\[\]"'\s]/g, ''), 10))
+        .filter((id) => !isNaN(id) && id > 0);
+    }
   }
 
   if (showIds.length === 0) {
