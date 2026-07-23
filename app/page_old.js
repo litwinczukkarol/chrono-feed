@@ -7,6 +7,7 @@ function FeedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
   const [feed, setFeed] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -16,17 +17,23 @@ function FeedContent() {
   const [isFallback, setIsFallback] = useState(false);
   const [fallbackReason, setFallbackReason] = useState(null);
 
-  // Pobieramy parametr 'shows' (lub 'ids' jako fallback) z adresu URL
-  const rawShows = searchParams.get('shows') || searchParams.get('ids');
+  const rawIds = searchParams.get('ids');
 
   useEffect(() => {
+  // eslint-disable-next-line
+  setMounted(true);
+}, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     let isMounted = true;
 
     async function fetchFeed() {
       setLoading(true);
       setError(null);
       try {
-        const query = rawShows ? `?shows=${encodeURIComponent(rawShows)}` : '';
+        const query = rawIds ? `?ids=${encodeURIComponent(rawIds)}` : '';
         const res = await fetch(`/api/feed${query}`);
         const data = await res.json();
 
@@ -52,7 +59,11 @@ function FeedContent() {
     return () => {
       isMounted = false;
     };
-  }, [rawShows]);
+  }, [rawIds, mounted]);
+
+  if (!mounted) {
+    return null;
+  }
 
   const serializdDirectUrl = `https://www.serializd.com/user/${encodeURIComponent(username)}/currently_watching`;
 
@@ -98,7 +109,7 @@ function FeedContent() {
               </button>
             </form>
 
-            {rawShows && (
+            {rawIds && (
               <button
                 onClick={resetToFallback}
                 className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-400 px-3 py-2 rounded-xl transition-colors"
@@ -122,7 +133,7 @@ function FeedContent() {
       </header>
 
       {/* Powiększony Baner z wielkim przyciskiem */}
-      <div className="max-w-7xl mx-auto mb-6 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="max-w-7xl mx-auto mb-10 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6 relative z-10">
           <div className="space-y-2 max-w-xl flex flex-col justify-center">
             <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full text-indigo-400 text-xs font-semibold w-fit">
@@ -146,27 +157,6 @@ function FeedContent() {
           >
             <span>↗️ Przejdź na profil Serializd ({username})</span>
           </a>
-        </div>
-      </div>
-
-      {/* PASEK DIAGNOSTYCZNY / DEBUG */}
-      <div className="max-w-7xl mx-auto mb-10 bg-slate-900/90 border border-amber-500/40 p-4 rounded-xl text-xs font-mono space-y-1.5 shadow-lg">
-        <div className="text-amber-400 font-bold text-sm mb-1 flex items-center gap-2">
-          <span>🔍 Panel Diagnostyczny:</span>
-        </div>
-        <div className="text-slate-300">
-          • Parametr w URL (<code className="text-indigo-400">rawShows</code>):{' '}
-          <span className="text-indigo-300 break-all">{rawShows || 'BRAK (używam wartości domyślnych)'}</span>
-        </div>
-        <div className="text-slate-300">
-          • Stan odpowiedzi API (<code className="text-indigo-400">isFallback</code>):{' '}
-          <span className={isFallback ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
-            {isFallback ? 'TAK (Fallback aktywny)' : 'NIE (Dane na żywo z TMDB)'}
-          </span>
-        </div>
-        <div className="text-slate-300">
-          • Powód Fallbacku (<code className="text-indigo-400">fallbackReason</code>):{' '}
-          <span className="text-red-400 font-bold">{fallbackReason || 'Brak powody / Sukces'}</span>
         </div>
       </div>
 
