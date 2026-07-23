@@ -3,8 +3,8 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-// Kod Bookmarkletu z obsługą akumulacji stron (sessionStorage)
-const BOOKMARKLET_CODE = `javascript:(function(){const s=Array.from(document.querySelectorAll('a[href*="/show/"]')).map(a=>{const m=a.href.match(/\\/show\\/(\\d+)/);return m?m[1]:null}).filter(Boolean);const u=[...new Set(s)];if(!u.length){alert('Nie znaleziono seriali na tej stronie! Upewnij się, że jesteś na Serializd.');return;}let acc=[];try{acc=JSON.parse(sessionStorage.getItem('chrono_feed_shows')||'[]')}catch(e){}const c=[...new Set([...acc,...u])];sessionStorage.setItem('chrono_feed_shows',JSON.stringify(c));if(confirm('Zebrano '+c.length+' seriali! Przejść do Chrono-Feed?\\n\\n(Kliknij Anuluj, jeśli chcesz przejść na kolejną stronę i zebrać więcej)')){sessionStorage.removeItem('chrono_feed_shows');window.location.href='https://chrono-feed-app.vercel.app/?shows='+c.join(',');}})();`;
+// Pancerny Bookmarklet z uniwersalnym parsowaniem linków i minifikacją
+const BOOKMARKLET_CODE = `javascript:(function(){const l=Array.from(document.querySelectorAll('a'));const s=[];l.forEach(a=>{const h=a.getAttribute('href')||a.href||'';if(h.includes('/show')){const m=h.match(/\\/show\\/[^\\d]*(\\d+)/);if(m&&m[1])s.push(m[1]);}});const u=[...new Set(s)];if(!u.length){alert('Nie znaleziono seriali na tej stronie! Upewnij się, że jesteś na stronie Currently Watching na Serializd.');return;}let acc=[];try{acc=JSON.parse(sessionStorage.getItem('chrono_feed_shows')||'[]')}catch(e){}const c=[...new Set([...acc,...u])];sessionStorage.setItem('chrono_feed_shows',JSON.stringify(c));if(confirm('Zebrano '+c.length+' seriali! Przejść do Chrono-Feed?\\n\\n(Kliknij Anuluj, jeśli chcesz przejść na kolejną stronę i zebrać więcej)')){sessionStorage.removeItem('chrono_feed_shows');window.location.href='https://chrono-feed-app.vercel.app/?shows='+c.join(',');}})();`;
 
 function FeedContent() {
   const searchParams = useSearchParams();
@@ -24,7 +24,6 @@ function FeedContent() {
   const bookmarkletRef = useRef(null);
   const rawShows = searchParams.get('shows') || searchParams.get('ids');
 
-  // Obejście blokady Reacta na javascript: URL w href
   useEffect(() => {
     if (bookmarkletRef.current) {
       bookmarkletRef.current.setAttribute('href', BOOKMARKLET_CODE);
