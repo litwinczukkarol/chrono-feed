@@ -119,7 +119,7 @@ export async function GET(request) {
   }
 
   try {
-    const limitedIds = showIds.slice(0, 25);
+    const limitedIds = showIds.slice(0, 100);
 
     const showPromises = limitedIds.map(async (id) => {
       const res = await fetch(
