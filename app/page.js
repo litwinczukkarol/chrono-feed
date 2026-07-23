@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 // Kod Bookmarkletu z obsługą akumulacji stron (sessionStorage)
@@ -19,8 +19,17 @@ function FeedContent() {
   const [isFallback, setIsFallback] = useState(false);
   const [fallbackReason, setFallbackReason] = useState(null);
   const [rawApiResponse, setRawApiResponse] = useState(null);
+  const [copied, setCopied] = useState(false);
 
+  const bookmarkletRef = useRef(null);
   const rawShows = searchParams.get('shows') || searchParams.get('ids');
+
+  // Obejście blokady Reacta na javascript: URL w href
+  useEffect(() => {
+    if (bookmarkletRef.current) {
+      bookmarkletRef.current.setAttribute('href', BOOKMARKLET_CODE);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -87,6 +96,12 @@ function FeedContent() {
     router.push('/');
   };
 
+  const copyBookmarklet = () => {
+    navigator.clipboard.writeText(BOOKMARKLET_CODE);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
       <header className="max-w-7xl mx-auto mb-8 border-b border-slate-800 pb-6">
@@ -150,21 +165,28 @@ function FeedContent() {
             <h2 className="text-xl font-bold text-white">
               Szybka aktualizacja listy z Serializd
             </h2>
-            <div className="text-sm text-slate-300 leading-relaxed space-y-1.5">
-              <p>
-                1. Przeciągnij ten przycisk na swój pasek zakładek:{' '}
+            <div className="text-sm text-slate-300 leading-relaxed space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span>1. Przeciągnij na pasek zakładek:</span>
                 <a
-                  href={BOOKMARKLET_CODE}
+                  ref={bookmarkletRef}
                   onClick={(e) => {
                     e.preventDefault();
-                    alert('Przeciągnij ten przycisk myszką na swój pasek zakładek w przeglądarce!');
+                    alert('Przeciągnij ten przycisk myszką na swój pasek zakładek w przeglądarce (Ctrl+Shift+B), albo użyj przycisku "Kopiuj kod" obok!');
                   }}
-                  className="inline-flex items-center gap-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 py-0.5 rounded-md text-xs shadow cursor-grab active:cursor-grabbing font-mono transition-transform hover:scale-105 border border-amber-300"
+                  className="inline-flex items-center gap-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 py-1 rounded-md text-xs shadow cursor-grab active:cursor-grabbing font-mono transition-transform hover:scale-105 border border-amber-300 select-none"
                   title="Przeciągnij mnie na pasek zakładek!"
                 >
                   📌 Do Chrono-Feed
                 </a>
-              </p>
+                <button
+                  type="button"
+                  onClick={copyBookmarklet}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-2.5 py-1 rounded-md border border-slate-700 transition-colors font-mono"
+                >
+                  {copied ? '✅ Skopiowano kod!' : '📋 Kopiuj kod'}
+                </button>
+              </div>
               <p>
                 2. Kliknij duży przycisk obok, aby przejść do swojego profilu na Serializd.
               </p>
@@ -362,7 +384,7 @@ function ShowCard({ show, isOverdue }) {
               </span>
               {show.lastEpisode ? (
                 <p className="text-xs text-slate-400 mt-0.5">
-                  S${show.lastEpisode.season}E${show.lastEpisode.episode} <span className="text-slate-600">•</span> ${show.lastEpisode.airDate}
+                  S{show.lastEpisode.season}E{show.lastEpisode.episode} <span className="text-slate-600">•</span> {show.lastEpisode.airDate}
                 </p>
               ) : (
                 <p className="text-xs text-slate-600">Brak danych</p>
