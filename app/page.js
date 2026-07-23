@@ -15,6 +15,9 @@ function FeedContent() {
   const [inputUser, setInputUser] = useState('WyrdHamster');
   const [isFallback, setIsFallback] = useState(false);
   const [fallbackReason, setFallbackReason] = useState(null);
+  
+  // Stan na przechowywanie pełnego surowego JSON-a z API
+  const [rawApiResponse, setRawApiResponse] = useState(null);
 
   // Pobieramy parametr 'shows' (lub 'ids' jako fallback) z adresu URL
   const rawShows = searchParams.get('shows') || searchParams.get('ids');
@@ -26,7 +29,6 @@ function FeedContent() {
       setLoading(true);
       setError(null);
       try {
-        // CZYSZCZENIE PARAMETRU: Przekształcamy '["94997","138502"]' na '94997,138502'
         let cleanShows = rawShows;
         if (rawShows) {
           try {
@@ -39,12 +41,14 @@ function FeedContent() {
           }
         }
 
-        // Wysyłamy do backendu już czysty ciąg po przecinkach
         const query = cleanShows ? `?shows=${encodeURIComponent(cleanShows)}` : '';
         const res = await fetch(`/api/feed${query}`);
         const data = await res.json();
 
         if (isMounted) {
+          // Zapamiętujemy pełną odpowiedź do wyświetlenia w panelu debugowania
+          setRawApiResponse(data);
+
           if (data.success) {
             setFeed(data.feed);
             setTotalCount(data.totalCount);
@@ -55,7 +59,10 @@ function FeedContent() {
           }
         }
       } catch (err) {
-        if (isMounted) setError('Błąd połączenia z serwerem.');
+        if (isMounted) {
+          setError('Błąd połączenia z serwerem.');
+          setRawApiResponse({ error: err.message });
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -163,24 +170,36 @@ function FeedContent() {
         </div>
       </div>
 
-      {/* PASEK DIAGNOSTYCZNY / DEBUG */}
-      <div className="max-w-7xl mx-auto mb-10 bg-slate-900/90 border border-amber-500/40 p-4 rounded-xl text-xs font-mono space-y-1.5 shadow-lg">
-        <div className="text-amber-400 font-bold text-sm mb-1 flex items-center gap-2">
-          <span>🔍 Panel Diagnostyczny:</span>
+      {/* ROZSZERZONY PASEK DIAGNOSTYCZNY */}
+      <div className="max-w-7xl mx-auto mb-10 bg-slate-900/90 border border-amber-500/40 p-5 rounded-xl text-xs font-mono space-y-4 shadow-lg">
+        <div className="text-amber-400 font-bold text-sm flex items-center justify-between border-b border-slate-800 pb-2">
+          <span>🔍 Rozszerzony Panel Diagnostyczny:</span>
+          <span className="text-slate-500 text-[10px] font-normal">Wersja testowa</span>
         </div>
-        <div className="text-slate-300">
-          • Parametr w URL (<code className="text-indigo-400">rawShows</code>):{' '}
-          <span className="text-indigo-300 break-all">{rawShows || 'BRAK (używam wartości domyślnych)'}</span>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-slate-300 border-b border-slate-800 pb-3">
+          <div>
+            • Parametr URL (<code className="text-indigo-400">rawShows</code>):<br />
+            <span className="text-indigo-300 font-bold break-all">{rawShows || 'BRAK'}</span>
+          </div>
+          <div>
+            • Tryb API (<code className="text-indigo-400">isFallback</code>):<br />
+            <span className={isFallback ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
+              {isFallback ? 'TAK (Fallback)' : 'NIE (Na Żywo)'}
+            </span>
+          </div>
+          <div>
+            • Powód (<code className="text-indigo-400">fallbackReason</code>):<br />
+            <span className="text-red-400 font-bold">{fallbackReason || 'Sukces / Brak'}</span>
+          </div>
         </div>
-        <div className="text-slate-300">
-          • Stan odpowiedzi API (<code className="text-indigo-400">isFallback</code>):{' '}
-          <span className={isFallback ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
-            {isFallback ? 'TAK (Fallback aktywny)' : 'NIE (Dane na żywo z TMDB)'}
-          </span>
-        </div>
-        <div className="text-slate-300">
-          • Powód Fallbacku (<code className="text-indigo-400">fallbackReason</code>):{' '}
-          <span className="text-red-400 font-bold">{fallbackReason || 'Brak powody / Sukces'}</span>
+
+        {/* SUROWY PAYLOAD Z API */}
+        <div>
+          <span className="text-amber-300 font-bold block mb-1">📦 Pełny Payload z API (/api/feed):</span>
+          <pre className="bg-slate-950 p-4 rounded-lg text-emerald-400 overflow-x-auto text-[11px] max-h-72 border border-slate-800 font-mono leading-tight">
+            {rawApiResponse ? JSON.stringify(rawApiResponse, null, 2) : 'Czekanie na odpowiedź API...'}
+          </pre>
         </div>
       </div>
 
@@ -327,7 +346,7 @@ function ShowCard({ show, isOverdue }) {
               </span>
               {show.lastEpisode ? (
                 <p className="text-xs text-slate-400 mt-0.5">
-                  S{show.lastEpisode.season}E{show.lastEpisode.episode} <span className="text-slate-600">•</span> {show.lastEpisode.airDate}
+                  S${show.lastEpisode.season}E${show.lastEpisode.episode} <span className="text-slate-600">•</span> ${show.lastEpisode.airDate}
                 </p>
               ) : (
                 <p className="text-xs text-slate-600">Brak danych</p>
