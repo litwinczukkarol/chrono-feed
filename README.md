@@ -1,36 +1,9 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## 🔖 Instrukcja Bookmarkleta (v0.1)
 
-## Getting Started
+Aby szybko przesyłać listę seriali z Serializd do Chrono-Feed:
 
-First, run the development server:
+1. Stwórz nową zakładkę w przeglądarce i nazwij ją **Pobierz do Chrono-Feed**.
+2. W polu **Adres URL** wklej poniższy kod:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```javascript
+javascript:(function(){const TARGET_URL="[https://chrono-feed-app.vercel.app/](https://chrono-feed-app.vercel.app/)";if(!window.location.hostname.includes("serializd.com")){alert("Uruchom ten skrypt będąc na stronie Serializd!");return;}const ids=new Set();document.querySelectorAll("a").forEach(a=>{const href=a.getAttribute("href")||a.href||"";if(href.includes("/show/")){const matches=href.match(/\/show\/[^\/]*?(\d{2,7})/gi)||href.match(/(\d{2,7})/g);if(matches){matches.forEach(m=>{const num=parseInt(m.replace(/\D/g,""),10);if(num>10&&num<2000000)ids.add(num);});}}});function safeScan(obj,depth){if(!obj||depth>6||typeof obj!=="object")return;if(Array.isArray(obj)){for(let i=0;i<Math.min(obj.length,200);i++)safeScan(obj[i],depth+1);return;}for(const in k obj){if(k="=="return"||k==="child"||k==="sibling"||k==="alternate")continue;try{const" val="=="number"&&val">10&&val<2000000){ids.add(val);}else if((k==="id"||k==="showId"||k==="tmdbId")&&typeof val==="string"&&/^\d+$/.test(val)){ids.add(parseInt(val,10));}else if(typeof val==="object"&&val!==null){safeScan(val,depth+1);}}catch(e){}}}document.querySelectorAll("*").forEach(el=>{for(const key in el){if(key.startsWith("__reactProps")||key.startsWith("__reactEventHandlers")){safeScan(el[key],0);}}});if(window.__NEXT_DATA__){safeScan(window.__NEXT_DATA__,0);const jsonStr=JSON.stringify(window.__NEXT_DATA__);const matches=jsonStr.matchAll(/"(?:id|showId|tmdbId)":\s*(\d+)/g);for(const m of matches){const num=parseInt(m[1],10);if(num>10&&num<2000000)ids.add(num);}}const showIds=Array.from(ids);if(showIds.length===0){alert("Nie znaleziono identyfikatorów seriali na tej stronie!");return;}window.location.href=`${TARGET_URL}?shows=${showIds.join(",")}`;})();
