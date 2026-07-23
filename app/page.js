@@ -3,6 +3,9 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
+// Kod Bookmarkletu z obsługą akumulacji stron (sessionStorage)
+const BOOKMARKLET_CODE = `javascript:(function(){const s=Array.from(document.querySelectorAll('a[href*="/show/"]')).map(a=>{const m=a.href.match(/\\/show\\/(\\d+)/);return m?m[1]:null}).filter(Boolean);const u=[...new Set(s)];if(!u.length){alert('Nie znaleziono seriali na tej stronie! Upewnij się, że jesteś na Serializd.');return;}let acc=[];try{acc=JSON.parse(sessionStorage.getItem('chrono_feed_shows')||'[]')}catch(e){}const c=[...new Set([...acc,...u])];sessionStorage.setItem('chrono_feed_shows',JSON.stringify(c));if(confirm('Zebrano '+c.length+' seriali! Przejść do Chrono-Feed?\\n\\n(Kliknij Anuluj, jeśli chcesz przejść na kolejną stronę i zebrać więcej)')){sessionStorage.removeItem('chrono_feed_shows');window.location.href='https://chrono-feed-app.vercel.app/?shows='+c.join(',');}})();`;
+
 function FeedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -140,18 +143,35 @@ function FeedContent() {
 
       <div className="max-w-7xl mx-auto mb-10 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-stretch justify-between gap-6 relative z-10">
-          <div className="space-y-2 max-w-xl flex flex-col justify-center">
+          <div className="space-y-3 max-w-xl flex flex-col justify-center">
             <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full text-indigo-400 text-xs font-semibold w-fit">
               <span>⚡ Wczytywanie danych na żywo</span>
             </div>
             <h2 className="text-xl font-bold text-white">
               Szybka aktualizacja listy z Serializd
             </h2>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              1. Kliknij przycisk obok, aby przejść do zakładki <strong className="text-indigo-300">Currently Watching</strong>.<br />
-              2. Ustaw sortowanie na <strong className="text-indigo-300">Last Aired Date (Latest first)</strong> lub <strong className="text-indigo-300">Premiere Date</strong>.<br />
-              3. Użyj zakładki <strong className="text-amber-300 font-mono">Do Chrono-Feed</strong> na pasku zakładek.
-            </p>
+            <div className="text-sm text-slate-300 leading-relaxed space-y-1.5">
+              <p>
+                1. Przeciągnij ten przycisk na swój pasek zakładek:{' '}
+                <a
+                  href={BOOKMARKLET_CODE}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert('Przeciągnij ten przycisk myszką na swój pasek zakładek w przeglądarce!');
+                  }}
+                  className="inline-flex items-center gap-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 py-0.5 rounded-md text-xs shadow cursor-grab active:cursor-grabbing font-mono transition-transform hover:scale-105 border border-amber-300"
+                  title="Przeciągnij mnie na pasek zakładek!"
+                >
+                  📌 Do Chrono-Feed
+                </a>
+              </p>
+              <p>
+                2. Kliknij duży przycisk obok, aby przejść do swojego profilu na Serializd.
+              </p>
+              <p>
+                3. Ustaw sortowanie na <strong className="text-indigo-300">Last Aired Date</strong> lub <strong className="text-indigo-300">Premiere Date</strong> i kliknij zapisaną zakładkę!
+              </p>
+            </div>
           </div>
 
           <a
@@ -342,7 +362,7 @@ function ShowCard({ show, isOverdue }) {
               </span>
               {show.lastEpisode ? (
                 <p className="text-xs text-slate-400 mt-0.5">
-                  S{show.lastEpisode.season}E{show.lastEpisode.episode} <span className="text-slate-600">•</span> {show.lastEpisode.airDate}
+                  S${show.lastEpisode.season}E${show.lastEpisode.episode} <span className="text-slate-600">•</span> ${show.lastEpisode.airDate}
                 </p>
               ) : (
                 <p className="text-xs text-slate-600">Brak danych</p>
